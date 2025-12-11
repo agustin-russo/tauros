@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLineEdit, QPushButton
 from PySide6.QtCore import Qt
 import qdarktheme
-from PySide6.QtGui import QFont, QFontDatabase, QIntValidator, QDoubleValidator, QPainter, QColor, QImage
-from core.basic_mapping import colors
+from PySide6.QtGui import QFont, QFontDatabase, QIntValidator, QDoubleValidator, QPainter, QImage
+import numpy as np
+
 
 app = QApplication()
 app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
@@ -39,6 +40,21 @@ class BasicOptions:
     def _connect(self, layout):
         layout.addWidget(self.widget)
 
+class DoubleLineOptions(BasicOptions):
+    def __init__(self, text="", default="", int_only=False, double_only=False):
+        super().__init__(text, default, int_only, double_only)
+        self.line2 = QLineEdit()
+        self.line2.setFixedWidth(60)
+
+        if int_only:
+            self.line2.setValidator(QIntValidator())
+
+        if double_only:
+            self.line2.setValidator(QDoubleValidator())
+
+        self.line2.setText(default)
+        self.layout.addWidget(self.line2)
+        
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -73,7 +89,7 @@ class MainWindow(QMainWindow):
         self.opciones.append(self.seed)
 
         # Size
-        self.size_op = BasicOptions("Size", "512", True)
+        self.size_op = DoubleLineOptions("Size", "512", True)
         self.size_op._connect(opciones)
         self.opciones.append(self.size_op)
 
@@ -104,6 +120,10 @@ class MainWindow(QMainWindow):
     def get_values(self):
         valores = {}
         for i in self.opciones:
+            if i.label.text().lower() == "size":
+                valores[i.label.text().lower()] = (i.line.text(), i.line2.text())
+                continue
+
             valores[i.label.text().lower()] = i.line.text()
         
         return valores
@@ -119,22 +139,18 @@ class MapWidget(QWidget):
         self.cols = cols
         self.pixel_size = pixel_size
 
-        self.map_data = [[0 for _ in range(cols)] for _ in range(rows)]
-
-        # Imagen cacheada
+        self.map_data = np.zeros((self.cols, self.rows), dtype=np.uint32)
         self.cached_image = None
 
         self.update_widget_size()
         self.regenerate_image()
 
-    # Cambiar el tamaño de cada píxel
     def set_pixel_size(self, new_size):
         self.pixel_size = new_size
         self.update_widget_size()
         self.regenerate_image()
         self.update()
 
-    # Cambiar completamente el mapa
     def set_map(self, new_map):
         self.map_data = new_map
         self.rows = len(new_map)
@@ -148,26 +164,26 @@ class MapWidget(QWidget):
             self.cols * self.pixel_size,
             self.rows * self.pixel_size
         )
-
+    
     def regenerate_image(self):
-        w = self.cols * self.pixel_size
-        h = self.rows * self.pixel_size
+        arr = self.map_data.astype(np.uint32)
+        buf = memoryview(arr)
+        bytes_per_line = arr.strides[0]
 
-        img = QImage(w, h, QImage.Format_RGB32)
-        painter = QPainter(img)
+        img = QImage(
+            buf,
+            self.cols,
+            self.rows,
+            bytes_per_line,
+            QImage.Format_RGB32
+        )
 
-        for row in range(self.rows):
-            for col in range(self.cols):
-                color = QColor(colors[self.map_data[row][col]])
-                painter.fillRect(
-                    col * self.pixel_size,
-                    row * self.pixel_size,
-                    self.pixel_size,
-                    self.pixel_size,
-                    color
-                )
+        if self.pixel_size > 1:
+            img = img.scaled(
+                self.cols * self.pixel_size,
+                self.rows * self.pixel_size
+            )
 
-        painter.end()
         self.cached_image = img
 
     def paintEvent(self, event):
