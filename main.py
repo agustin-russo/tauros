@@ -12,7 +12,7 @@ def generate_map():
     mapa = bm.MapGenerator(int(valores["size"][0]), int(valores["size"][1]), int(valores["seed"]))
 
     mapa._make_world(int(valores["scale"]), int(valores["octaves"]), float(valores["persistence"]), float(valores["lacunarity"]))
-    mapa._color_world()
+    mapa._color_world([float(valores["sea level"]), float(valores["coast level"]), float(valores["land level"]), float(valores["mountain level"])])
 
     #end_time1 = time.perf_counter()
     #print("Core done in ", end_time1-counter)

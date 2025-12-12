@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLineEdit, QPushButton
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLineEdit, QPushButton, QScrollArea
 from PySide6.QtCore import Qt
 import qdarktheme
 from PySide6.QtGui import QFont, QFontDatabase, QIntValidator, QDoubleValidator, QPainter, QImage
@@ -8,7 +8,7 @@ import numpy as np
 app = QApplication()
 app.setStyleSheet(qdarktheme.load_stylesheet("dark"))
 
-font_path = "TAUROS/fonts/InterVariable.ttf"
+font_path = "TAUROS/assets/fonts/InterVariable.ttf"
 font_id = QFontDatabase.addApplicationFont(font_path)
 families = QFontDatabase.applicationFontFamilies(font_id)
 app.setFont(QFont(families[0], 11))
@@ -64,6 +64,8 @@ class MainWindow(QMainWindow):
 
         container = QWidget()
         layout = QHBoxLayout(container)
+        scroll_area = QScrollArea()
+        scroll_area.verticalScrollBar()
         option_container = QWidget()
         opciones = QVBoxLayout(option_container)
 
@@ -77,7 +79,9 @@ class MainWindow(QMainWindow):
         self.load_options(opciones)
 
         layout.addWidget(self.mapa)
-        layout.addWidget(option_container)
+        scroll_area.setWidget(option_container)
+        scroll_area.setMinimumWidth(230)
+        layout.addWidget(scroll_area)
 
         self.setCentralWidget(container)
 
@@ -113,9 +117,37 @@ class MainWindow(QMainWindow):
         self.lacunarity._connect(opciones)
         self.opciones.append(self.lacunarity)
 
+        label1 = QLabel("---------------------------")
+        label1.setAlignment(Qt.AlignCenter)
+        opciones.addWidget(label1)
+
+        self.load_terrain_options(opciones)
+
         # Button
         self.generate = QPushButton("Generate")
         opciones.addWidget(self.generate)
+
+    def load_terrain_options(self, opciones):
+        # Sea Level
+        self.sea = BasicOptions("Sea level", "0.55", double_only=True)
+        self.sea._connect(opciones)
+        self.opciones.append(self.sea)
+
+        # Coast Level
+        self.coast = BasicOptions("Coast level", "0.60", double_only=True)
+        self.coast._connect(opciones)
+        self.opciones.append(self.coast)
+
+        # Land Level
+        self.land = BasicOptions("Land level", "0.80", double_only=True)
+        self.land._connect(opciones)
+        self.opciones.append(self.land)
+
+        # Mountain Level
+        self.mountain = BasicOptions("Mountain level", "0.90", double_only=True)
+        self.mountain._connect(opciones)
+        self.opciones.append(self.mountain)
+
 
     def get_values(self):
         valores = {}

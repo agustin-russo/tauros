@@ -1,8 +1,14 @@
 # Changelog
-Todos los cambios notables de este proyecto serán documentados en este archivo.
 
-Formato basado en Keep a Changelog  
-Versionado Semántico (SemVer).
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [Unreleased]
+- Mejora en la UI, más personalización y cambios estéticos.
 
 ---
 
