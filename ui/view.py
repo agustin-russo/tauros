@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLineEdit, QPushButton, QScrollArea
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup
 from PySide6.QtCore import Qt
 import qdarktheme
-from PySide6.QtGui import QFont, QFontDatabase, QIntValidator, QDoubleValidator, QPainter, QImage
-import numpy as np
+from PySide6.QtGui import QFont, QFontDatabase, QIntValidator, QDoubleValidator
+from ui.map_widget import MapWidget
 
 
 app = QApplication()
@@ -70,6 +70,34 @@ class MainWindow(QMainWindow):
         opciones = QVBoxLayout(option_container)
 
         self.mapa = MapWidget()
+        mapa_widget = QWidget()
+        mapa_layout = QVBoxLayout(mapa_widget)
+        mapa_layout.addWidget(self.mapa)
+
+        # Nuevo, para cambiar entre mapas
+        selection_widget = QWidget()
+        selection_layout = QHBoxLayout(selection_widget)
+        self.selection = QButtonGroup()
+
+        button1 = QRadioButton("Height")
+        button2 = QRadioButton("Temperature")
+        button3 = QRadioButton("Humidity")
+
+        button1.setChecked(True)
+
+        button1.toggled.connect(self.change_map)
+        button2.toggled.connect(self.change_map)
+        button3.toggled.connect(self.change_map)
+
+        selection_layout.addWidget(button1)
+        selection_layout.addWidget(button2)
+        selection_layout.addWidget(button3)
+
+        self.selection.addButton(button1, id=0)
+        self.selection.addButton(button2, id=1)  
+        self.selection.addButton(button3, id=2)
+
+        mapa_layout.addWidget(selection_widget)
 
         label1 = QLabel("Opciones")
         label1.setFont(title_font)
@@ -78,7 +106,7 @@ class MainWindow(QMainWindow):
         opciones.addWidget(label1)
         self.load_options(opciones)
 
-        layout.addWidget(self.mapa)
+        layout.addWidget(mapa_widget)
         scroll_area.setWidget(option_container)
         scroll_area.setMinimumWidth(230)
         layout.addWidget(scroll_area)
@@ -160,65 +188,6 @@ class MainWindow(QMainWindow):
         
         return valores
 
-
-# Mapa para dibujar
-
-class MapWidget(QWidget):
-    def __init__(self, rows=512, cols=512, pixel_size=1):
-        super().__init__()
-
-        self.rows = rows
-        self.cols = cols
-        self.pixel_size = pixel_size
-
-        self.map_data = np.zeros((self.cols, self.rows), dtype=np.uint32)
-        self.cached_image = None
-
-        self.update_widget_size()
-        self.regenerate_image()
-
-    def set_pixel_size(self, new_size):
-        self.pixel_size = new_size
-        self.update_widget_size()
-        self.regenerate_image()
-        self.update()
-
-    def set_map(self, new_map):
-        self.map_data = new_map
-        self.rows = len(new_map)
-        self.cols = len(new_map[0])
-        self.update_widget_size()
-        self.regenerate_image()
-        self.update()
-
-    def update_widget_size(self):
-        self.setFixedSize(
-            self.cols * self.pixel_size,
-            self.rows * self.pixel_size
-        )
-    
-    def regenerate_image(self):
-        arr = self.map_data.astype(np.uint32)
-        buf = memoryview(arr)
-        bytes_per_line = arr.strides[0]
-
-        img = QImage(
-            buf,
-            self.cols,
-            self.rows,
-            bytes_per_line,
-            QImage.Format_RGB32
-        )
-
-        if self.pixel_size > 1:
-            img = img.scaled(
-                self.cols * self.pixel_size,
-                self.rows * self.pixel_size
-            )
-
-        self.cached_image = img
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.drawImage(0, 0, self.cached_image)
-
+    def change_map(self, checked):
+        if checked:
+            self.mapa.change_map(self.selection.id(self.selection.checkedButton()))
