@@ -1,30 +1,48 @@
 import numpy as np
+from core.perlin_noise import perlin_noise, make_perm
+from scipy.ndimage import gaussian_filter
 
 
-def temperature_map(height, width, height_map, sea_level, type="global"):
-    base_temp = 35
+def temperature_map(seed, height, width, height_map, sea_level, sand_level):
+    base_temp = 25 # Temperatura "promedio" en el ecuador
+    variacion_termica = 5 # Cuanto varía del promedio
     temp_map = np.zeros_like(height_map, dtype=np.float32)
-    height_punishment = 6.5 # Lapse Rate, perdida cada mil metros
+    height_punishment = 1.5 # Lapse Rate, perdida cada mil metros
     max_world_height = 8000 # Ocho mil metros
-
+    random = perlin_noise(make_perm(seed), height=height, width=width)
 
     for y in range(height):
-        if type == "global":
+        for x in range(width):
             # Formula piola para normalizar la distancia al ecuador
             latitude = (abs(y - height / 2) / height) * 0.9
-        elif type == "map":
-            latitude = (abs(y - height) / height) * 0.9
+            initial_temp = base_temp - latitude * 35.0 # Minima temperatura, -10 grados
             
-        initial_temp = base_temp - latitude * 60.0
+            if height_map[y][x] > sea_level:
+                initial_temp = initial_temp + (variacion_termica * 0.5)
+            else:
+                initial_temp = initial_temp - (variacion_termica * 0.5)
+            
+            if height_map[y][x] > sea_level and height_map[y][x] < sand_level:
+                perdida_altura = variacion_termica * 0.5
 
-        for x in range(width):
-            elevation = max(height_map[y][x], sea_level) - sea_level
-            perdida_potencial = max_world_height * height_punishment / 1000.0
-            perdida_altura = (elevation / (1 - sea_level)) * perdida_potencial
-            temp_map[y][x] = initial_temp - perdida_altura
+            else:
+                elevation = max(height_map[y][x], sea_level) - sea_level
+                perdida_potencial = max_world_height * height_punishment / 1000.0
+                perdida_altura = (elevation / (1 - sea_level)) * perdida_potencial
+            temp_map[y][x] = initial_temp - perdida_altura + (random[y][x] * 2.0)
 
     return temp_map
 
-def humidity_map():
-    pass
+def humidity_map(seed, height, width, heightmap, sea_level, blur=2):
+    n = perlin_noise(make_perm(seed+2), height, width)
+    humidity = (n - n.min()) / (n.max() - n.min())
+    
+    gx, gy = np.gradient(heightmap)
+    slope = np.sqrt(gx**2 + gy**2)
+    slope = (slope - slope.min()) / (slope.max() - slope.min() + 1e-8)
+    humidity *= (1.0 - slope)
+    
+    humidity[heightmap <= sea_level] = 1.0
+    humidity = gaussian_filter(humidity, sigma=blur)
 
+    return humidity

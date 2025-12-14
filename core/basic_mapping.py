@@ -12,12 +12,19 @@ colors = [
     0xFFD8D8D8
 ]
 
-# A, R, G, B
+HCOLORS = np.array([
+    (255, 125, 107, 67),
+    (255, 224, 183, 90),
+    (255, 93, 176, 88),
+    (255, 59, 112, 56),
+    (255, 86, 156, 179),
+], dtype=np.float32)
+
 COLORS = np.array([
-    (255,   0,   0, 255),  # azul
-    (255,   0, 255,   0),  # verde
-    (255, 255, 255,   0),  # amarillo
-    (255, 255,   0,   0),  # rojo
+    (255,   0,   0, 255),  
+    (255,   0, 255,   0),  
+    (255, 255, 255,   0),  
+    (255, 255,   0,   0), 
 ], dtype=np.float32)
 
 
@@ -32,14 +39,18 @@ class MapGenerator:
         self.humidity = np.zeros_like(self.temperature)
         self.biome = np.zeros_like(self.temperature, dtype=np.int32)
 
-    def _make_world(self, scale=100.0, octaves=4, persistence=0.5, lacunarity=2.0, sea_level=0.55):
+    def _make_world(self, scale=100.0, octaves=4, persistence=0.5, lacunarity=2.0, sea_level=0.55, sand_level=0.60):
         w = pn.perlin_noise(self.perm, self.height, self.width, scale, octaves, persistence, lacunarity)
         self.world = (w - w.min()) / (w.max() - w.min())
 
         # Temperature and humidity
-        t = temperature_map(self.height, self.width, self.world, sea_level)
+        t = temperature_map(self.seed+1, self.height, self.width, self.world, sea_level, sand_level)
         low, high = np.percentile(t, [5, 95])
         self.temperature = np.clip((t - low) / (high - low), 0, 1)
+
+        h = humidity_map(self.seed+2, self.height, self.width, self.world, sea_level)
+        low, high = np.percentile(h, [5, 95])
+        self.humidity = np.clip((h - low) / (high - low), 0, 1)
 
 
     def _color_world(self, levels=[0.55, 0.60, 0.80, 0.90]):
@@ -81,3 +92,25 @@ class MapGenerator:
             ).astype(np.uint32)
         
         return heatmap_argb(self.temperature)
+    
+    def _color_humidity(self):
+        def heatmap_argb(t):
+            t = np.clip(t, 0.0, 1.0)
+
+            p = t * 4.0
+            i = np.minimum(p.astype(np.int32), 3)
+            f = p - i
+
+            c1 = HCOLORS[i]
+            c2 = HCOLORS[i + 1]
+
+            rgba = (c1 + (c2 - c1) * f[..., None]).astype(np.uint32)
+
+            return (
+                (rgba[..., 0] << 24) |
+                (rgba[..., 1] << 16) |
+                (rgba[..., 2] << 8)  |
+                rgba[..., 3]
+            ).astype(np.uint32)
+        
+        return heatmap_argb(self.humidity)
