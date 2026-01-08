@@ -79,23 +79,27 @@ class MainWindow(QMainWindow):
         selection_layout = QHBoxLayout(selection_widget)
         self.selection = QButtonGroup()
 
+        button0 = QRadioButton("Biomes")
         button1 = QRadioButton("Height")
         button2 = QRadioButton("Temperature")
         button3 = QRadioButton("Humidity")
 
-        button1.setChecked(True)
+        button0.setChecked(True)
 
+        button0.toggled.connect(self.change_map)
         button1.toggled.connect(self.change_map)
         button2.toggled.connect(self.change_map)
         button3.toggled.connect(self.change_map)
 
+        selection_layout.addWidget(button0)
         selection_layout.addWidget(button1)
         selection_layout.addWidget(button2)
         selection_layout.addWidget(button3)
 
-        self.selection.addButton(button1, id=0)
-        self.selection.addButton(button2, id=1)  
-        self.selection.addButton(button3, id=2)
+        self.selection.addButton(button0, id=0)
+        self.selection.addButton(button1, id=1)
+        self.selection.addButton(button2, id=2)  
+        self.selection.addButton(button3, id=3)
 
         mapa_layout.addWidget(selection_widget)
 

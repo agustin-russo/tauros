@@ -1,6 +1,6 @@
 import numpy as np
 import core.perlin_noise as pn
-from core.advanced_mapping import temperature_map, humidity_map
+from core.advanced_mapping import temperature_map, humidity_map, biomes_map
 
 
 colors = [
@@ -44,7 +44,7 @@ class MapGenerator:
         self.world = (w - w.min()) / (w.max() - w.min())
 
         # Temperature and humidity
-        t = temperature_map(self.seed+1, self.height, self.width, self.world, sea_level, sand_level)
+        t = temperature_map(pn.perlin_noise(pn.make_perm(self.seed+1), self.height, self.width), self.height, self.width, self.world, sea_level, sand_level)
         low, high = np.percentile(t, [5, 95])
         self.temperature = np.clip((t - low) / (high - low), 0, 1)
 
@@ -114,3 +114,12 @@ class MapGenerator:
             ).astype(np.uint32)
         
         return heatmap_argb(self.humidity)
+    
+
+    def _color_biomes(self, sea_level, coast_level, land_level, mountain_level):
+        biome = biomes_map(self.height, self.width, self.world, self.temperature, self.humidity, sea_level, coast_level, land_level, mountain_level)
+
+        self.biome = biome
+
+        return biome
+

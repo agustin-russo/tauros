@@ -17,11 +17,11 @@ def generate_map():
     height = mapa._color_world([float(valores["sea level"]), float(valores["coast level"]), float(valores["land level"]), float(valores["mountain level"])])
     heat = mapa._color_temperature()
     hum = mapa._color_humidity()
-
+    biome = mapa._color_biomes(float(valores["sea level"]), float(valores["coast level"]), float(valores["land level"]), float(valores["mountain level"]))
     #end_time1 = time.perf_counter()
     #print("Core done in ", end_time1-counter)
 
-    window.mapa.set_maps([height, heat, hum])
+    window.mapa.set_maps([biome, height, heat, hum])
     #end_time = time.perf_counter()
     #print("World done in ", end_time-counter)
     

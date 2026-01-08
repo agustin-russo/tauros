@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased]
-- Mejora en la UI, más personalización y cambios estéticos.
 
 ---
 
@@ -35,5 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Render lento en mapas grandes.
+
+---
+
+## [1.1.0] - 2025-1-08
+### Added
+- Mejora en la UI, más personalización y cambios estéticos.
+- Creación de los mapas de humedad, temperatura y biomas para más realismo.
+- Cambios en la UI para ver los distintos mapas nuevos.
+- Leve perdida de velocidad, casi imperceptible, por los nuevos cambios en mapas muy grandes.
 
 ---
