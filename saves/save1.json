@@ -1,0 +1,15 @@
+{
+    "seed": "45634",
+    "size": [
+        "1024",
+        "512"
+    ],
+    "scale": "145",
+    "octaves": "6",
+    "persistence": "0.5",
+    "lacunarity": "2.0",
+    "sea level": "0.55",
+    "coast level": "0.60",
+    "land level": "0.80",
+    "mountain level": "0.90"
+}

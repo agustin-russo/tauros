@@ -1,5 +1,4 @@
-noise==1.2.2
 numba==0.63.1
-numpy==2.3.5
-pyqtdarktheme==0.1.7
-PySide6==6.10.1
+pyside6==6.10.1
+pyside6_addons==6.10.1
+pyside6_essentials==6.10.1

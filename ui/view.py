@@ -1,8 +1,11 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLineEdit, QPushButton, QScrollArea, QRadioButton, QButtonGroup, QDialog, QFileDialog
 from PySide6.QtCore import Qt
 import qdarktheme
 from PySide6.QtGui import QFont, QFontDatabase, QIntValidator, QDoubleValidator
 from ui.map_widget import MapWidget
+from core.saving_module import save_config, load_config
+from core.routes import SAVES_DIR
+import re
 
 
 app = QApplication()
@@ -15,7 +18,7 @@ app.setFont(QFont(families[0], 11))
 
 title_font = QFont(families[0], 32)
 title_font.setBold(True)
-subtitle_font = QFont(families[0], 26)
+subtitle_font = QFont(families[0], 20)
 
 
 class BasicOptions:
@@ -56,6 +59,48 @@ class DoubleLineOptions(BasicOptions):
         self.layout.addWidget(self.line2)
         
 
+class SaveDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Save configuration")
+
+        layout = QVBoxLayout(self)
+        label = QLabel("Name of the save file:")
+        layout.addWidget(label)
+
+        self.line = QLineEdit()
+        self.line.setFixedWidth(120)
+        self.line.setText("save1.json")
+
+        layout.addWidget(self.line)
+
+        self.warning = QLabel("")
+        self.warning.hide()
+        
+        layout.addWidget(self.warning)
+
+        self.save_btn = QPushButton("Save")
+        self.save_btn.clicked.connect(self.saving)
+
+        layout.addWidget(self.save_btn)
+    
+    def saving(self):
+        text = self.line.text()
+        regex = re.compile(r'^[^<>:"/\\|?*\x00-\x1F]+\.json$')
+
+        if bool(regex.match(text)):
+            self.accept()
+
+        else:
+            self.warning.setText("Invalid format")
+            self.warning.show()
+
+    @property
+    def filename(self):
+        return self.line.text()
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -67,7 +112,7 @@ class MainWindow(QMainWindow):
         scroll_area = QScrollArea()
         scroll_area.verticalScrollBar()
         option_container = QWidget()
-        opciones = QVBoxLayout(option_container)
+        self.opciones_layout = QVBoxLayout(option_container)
 
         self.mapa = MapWidget()
         mapa_widget = QWidget()
@@ -103,12 +148,13 @@ class MainWindow(QMainWindow):
 
         mapa_layout.addWidget(selection_widget)
 
-        label1 = QLabel("Opciones")
+        label1 = QLabel("Options")
         label1.setFont(title_font)
         label1.setAlignment(Qt.AlignCenter)
 
-        opciones.addWidget(label1)
-        self.load_options(opciones)
+        self.opciones_layout.addWidget(label1)
+        self.load_save_controls()
+        self.build_options()
 
         layout.addWidget(mapa_widget)
         scroll_area.setWidget(option_container)
@@ -117,47 +163,79 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(container)
 
-    def load_options(self, opciones):
+
+    def load_save_controls(self):
+
+        linea = QFrame()
+        linea.setFrameShape(QFrame.HLine)
+        linea.setFrameShadow(QFrame.Sunken)
+
+
+        linea2 = QFrame()
+        linea2.setFrameShape(QFrame.HLine)
+        linea2.setFrameShadow(QFrame.Sunken)
+
+        label1 = QLabel("Configs")
+        label1.setFont(subtitle_font)
+        label1.setAlignment(Qt.AlignCenter)
+
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        self.save_btn = QPushButton("Save Config")
+        self.save_btn.clicked.connect(self.save_config_options)
+        layout.addWidget(self.save_btn)
+
+        self.load_btn = QPushButton("Load Config")
+        self.load_btn.clicked.connect(self.load_config_options)
+        layout.addWidget(self.load_btn)
+
+        self.opciones_layout.addWidget(linea)
+        self.opciones_layout.addWidget(label1)
+        self.opciones_layout.addWidget(widget)
+        self.opciones_layout.addWidget(linea2)
+
+    def build_options(self):
         self.opciones = []
         # Seed
         self.seed = BasicOptions("Seed", "0", True)
-        self.seed._connect(opciones)
+        self.seed._connect(self.opciones_layout)
         self.opciones.append(self.seed)
 
         # Size
         self.size_op = DoubleLineOptions("Size", "512", True)
-        self.size_op._connect(opciones)
+        self.size_op._connect(self.opciones_layout)
         self.opciones.append(self.size_op)
 
         # Scale
         self.scale = BasicOptions("Scale", "100", True)
-        self.scale._connect(opciones)
+        self.scale._connect(self.opciones_layout)
         self.opciones.append(self.scale)
 
         # Octaves
         self.octaves = BasicOptions("Octaves", "6", True)
-        self.octaves._connect(opciones)
+        self.octaves._connect(self.opciones_layout)
         self.opciones.append(self.octaves)
 
         # Peristence
         self.persistence = BasicOptions("Persistence", "0.5", double_only=True)
-        self.persistence._connect(opciones)
+        self.persistence._connect(self.opciones_layout)
         self.opciones.append(self.persistence)
 
         # Lacunarity
         self.lacunarity = BasicOptions("Lacunarity", "2.0", double_only=True)
-        self.lacunarity._connect(opciones)
+        self.lacunarity._connect(self.opciones_layout)
         self.opciones.append(self.lacunarity)
 
-        label1 = QLabel("---------------------------")
-        label1.setAlignment(Qt.AlignCenter)
-        opciones.addWidget(label1)
+        linea = QFrame()
+        linea.setFrameShape(QFrame.HLine)
+        linea.setFrameShadow(QFrame.Sunken)
+        self.opciones_layout.addWidget(linea)
 
-        self.load_terrain_options(opciones)
+        self.load_terrain_options(self.opciones_layout)
 
         # Button
         self.generate = QPushButton("Generate")
-        opciones.addWidget(self.generate)
+        self.opciones_layout.addWidget(self.generate)
 
     def load_terrain_options(self, opciones):
         # Sea Level
@@ -195,3 +273,33 @@ class MainWindow(QMainWindow):
     def change_map(self, checked):
         if checked:
             self.mapa.change_map(self.selection.id(self.selection.checkedButton()))
+
+    
+    def save_config_options(self):
+        dialog = SaveDialog()
+        result = dialog.exec()
+
+        if result:
+            values = self.get_values()
+            save_config(values, dialog.filename)
+
+    
+    def load_config_options(self):
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load file",
+            str(SAVES_DIR),                       
+            "JSON files (*.json);;All files (*)"
+        )
+
+        if filename:
+            values = load_config(filename)
+            for i in self.opciones:
+                if i.label.text().lower() == "size":
+                    i.line.setText(values["size"][0])
+                    i.line2.setText(values["size"][1])
+                    continue
+
+                i.line.setText(values[i.label.text().lower()])
+
+            self.generate.click()

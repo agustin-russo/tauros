@@ -45,3 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Leve perdida de velocidad, casi imperceptible, por los nuevos cambios en mapas muy grandes.
 
 ---
+
+## [1.2.0] - 2025-2-02
+### Added
+- Corrección de la UI.
+- Implementación de guardado y cargado de configuraciones en el generador.
+- Retoques finales para cerrar el proyecto.
+
+---
