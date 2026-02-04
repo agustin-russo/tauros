@@ -16,6 +16,6 @@ Está pensado como un generador para uso personal (mapas para juegos, DND, etc.)
 
 ## 📦 Instalación
 ```bash
-git clone https://github.com/TU_USUARIO/tauros.git
-cd tauros
+git clone https://github.com/agustin-russo/tauros.git
+cd TAUROS
 pip install -r requirements.txt
